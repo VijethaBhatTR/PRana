@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PR Velocity Intelligence POC</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <div class="brand-mark" aria-hidden="true">PV</div>
+          <div>
+            <div class="eyebrow">POC workspace</div>
+            <h1>PR Velocity Intelligence</h1>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <div class="segmented-control" role="tablist" aria-label="Repository provider">
+            <button class="segment is-active" type="button" data-provider="github" role="tab" aria-selected="true">GitHub</button>
+            <button class="segment" type="button" data-provider="azure" role="tab" aria-selected="false">Azure DevOps</button>
+          </div>
+          <button class="primary-action" type="button" id="simulateEvent">
+            <span class="button-icon" aria-hidden="true">+</span>
+            Ingest event
+          </button>
+        </div>
+      </header>
+
+      <main class="dashboard">
+        <section class="source-strip" aria-label="Repository source">
+          <div class="source-copy">
+            <span class="section-kicker">Data source</span>
+            <strong id="sourceName">Sample telemetry</strong>
+            <small id="sourceStatus">Mock PR history loaded</small>
+          </div>
+          <form class="source-form" id="sourceForm">
+            <label for="sourceUrl">GitHub URL</label>
+            <input id="sourceUrl" type="url" value="https://github.com/DummyGitRepos" autocomplete="off" />
+            <button class="ghost-button source-button" type="submit" id="loadSource">Load source</button>
+          </form>
+        </section>
+
+        <section class="summary-grid" aria-label="Velocity summary">
+          <article class="metric-tile">
+            <span class="metric-label">Cycle time risk</span>
+            <strong id="cycleRisk">--</strong>
+            <small id="cycleRiskHint">Calculating</small>
+          </article>
+          <article class="metric-tile">
+            <span class="metric-label">At-risk PRs</span>
+            <strong id="atRiskCount">--</strong>
+            <small id="riskDelta">Live sample</small>
+          </article>
+          <article class="metric-tile">
+            <span class="metric-label">Reviewer pressure</span>
+            <strong id="reviewerPressure">--</strong>
+            <small id="reviewerPressureHint">Queues and SLA</small>
+          </article>
+          <article class="metric-tile">
+            <span class="metric-label">CI drag</span>
+            <strong id="ciDrag">--</strong>
+            <small id="ciDragHint">Failed or flaky checks</small>
+          </article>
+        </section>
+
+        <section class="main-grid">
+          <section class="panel velocity-panel" aria-labelledby="velocityTitle">
+            <div class="panel-heading">
+              <div>
+                <span class="section-kicker">Merge forecast</span>
+                <h2 id="velocityTitle">Predicted delay over next 24 hours</h2>
+              </div>
+              <div class="freshness" id="freshness">Updated just now</div>
+            </div>
+            <div class="forecast-layout">
+              <div class="risk-gauge" aria-label="Overall risk gauge">
+                <div class="gauge-ring">
+                  <span id="gaugeScore">--</span>
+                  <small>risk</small>
+                </div>
+              </div>
+              <div class="chart-wrap">
+                <div class="bar-chart" id="delayChart" aria-label="Predicted delay by pull request"></div>
+              </div>
+            </div>
+          </section>
+
+          <aside class="panel action-panel" aria-labelledby="actionTitle">
+            <div class="panel-heading compact">
+              <div>
+                <span class="section-kicker">Recommended next moves</span>
+                <h2 id="actionTitle">Action queue</h2>
+              </div>
+            </div>
+            <div class="action-list" id="actionList"></div>
+          </aside>
+
+          <section class="panel pr-panel" aria-labelledby="queueTitle">
+            <div class="panel-heading queue-heading">
+              <div>
+                <span class="section-kicker">Pull request queue</span>
+                <h2 id="queueTitle">Live PR telemetry</h2>
+              </div>
+              <div class="queue-controls">
+                <div class="search-box">
+                  <label for="searchInput">Search</label>
+                  <input id="searchInput" type="search" placeholder="PR, repo, reviewer" autocomplete="off" />
+                </div>
+                <div class="filter-pills" aria-label="Queue filters">
+                  <button class="filter-pill is-active" type="button" data-filter="all">All</button>
+                  <button class="filter-pill" type="button" data-filter="high">High risk</button>
+                  <button class="filter-pill" type="button" data-filter="reviewer">Reviewer</button>
+                  <button class="filter-pill" type="button" data-filter="ci">CI</button>
+                  <button class="filter-pill" type="button" data-filter="size">Size</button>
+                </div>
+              </div>
+            </div>
+            <div class="table-frame">
+              <table>
+                <thead>
+                  <tr>
+                    <th>PR</th>
+                    <th>Risk</th>
+                    <th>Predicted delay</th>
+                    <th>Bottleneck</th>
+                    <th>Reviewer</th>
+                    <th>CI</th>
+                  </tr>
+                </thead>
+                <tbody id="prTable"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <aside class="side-stack">
+            <section class="panel detail-panel" aria-labelledby="detailTitle">
+              <div class="panel-heading compact">
+                <div>
+                  <span class="section-kicker">Selected PR</span>
+                  <h2 id="detailTitle">Delay drivers</h2>
+                </div>
+              </div>
+              <div id="detailBody"></div>
+            </section>
+
+            <section class="panel reviewer-panel" aria-labelledby="reviewerTitle">
+              <div class="panel-heading compact">
+                <div>
+                  <span class="section-kicker">Reviewer capacity</span>
+                  <h2 id="reviewerTitle">Load heatmap</h2>
+                </div>
+              </div>
+              <div class="reviewer-list" id="reviewerList"></div>
+            </section>
+          </aside>
+        </section>
+
+        <section class="panel event-log-panel" aria-labelledby="eventTitle">
+          <div class="panel-heading compact">
+            <div>
+              <span class="section-kicker">Automation trail</span>
+              <h2 id="eventTitle">Recent decisions</h2>
+            </div>
+          </div>
+          <div class="event-log" id="eventLog"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
